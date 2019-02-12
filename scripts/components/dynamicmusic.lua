@@ -304,6 +304,14 @@ local function StopPlayerListeners(player)
     inst:RemoveEventCallback("triggeredevent", StartTriggeredDanger, player)
 end
 
+
+local function trigger_music(inst, phase)
+    if phase == day then
+        _soundemitter:PlaySound("rest/rest/day", "day1")
+    end
+end
+
+
 local function OnPhase(inst, phase)
     _isday = phase == "day"
     if _dangertask ~= nil or not _isenabled then
@@ -328,32 +336,75 @@ local function OnPhase(inst, phase)
     --Repurpose this as a delay before stingers or busy can start again
     _extendtime = (time or GetTime()) + 15
 
-    if  TheWorld.state.isday then
-        for k,pit in pairs(Ents) do if pit.prefab == "campfire" or pit.prefab == "firepit" and pit.components.burnable:IsBurning() then pit.SoundEmitter:SetParameter("light", "fade", 1) end end 
 
-        ThePlayer:DoPeriodicTask(.5, function()
-            if ThePlayer.LightWatcher:GetLightValue() > 0.10 then
-                _soundemitter:SetParameter("dark1", "fade", 0)
+   
+
+    ThePlayer:DoPeriodicTask(.3, function()
+        if ThePlayer.LightWatcher:GetLightValue() > 0.10 then
+            _soundemitter:SetParameter("dark1", "fade", 0)
+
+        end
+
+        if ThePlayer.LightWatcher:GetLightValue() < 0.10 then
+            _soundemitter:SetParameter("dark1", "fade", 1)
+
+        end
+    end)
+    
+
+    TheWorld:DoPeriodicTask(.5, function()
+
+        if  TheWorld.state.isnight then
+
+
+            for k,pit in pairs(Ents) do if pit.prefab == "campfire" or pit.prefab == "firepit" and pit.components.burnable:IsBurning() then pit.SoundEmitter:SetParameter("light", "fade", 1) end end
+            for k,pit in pairs(Ents) do if pit.prefab == "campfire" or pit.prefab == "firepit" and not pit.components.burnable:IsBurning() then pit.SoundEmitter:SetParameter("light", "fade", 0) end end
+            _soundemitter:PlaySound("rest/rest/darkness", "dark1")
+            _soundemitter:SetParameter("dark1", "fade", 1)
+            _soundemitter:SetParameter("dusk1", "fade", 0)
+
+        end
+
+        if  TheWorld.state.isdusk then
+            if not inst.SoundEmitter:PlayingSound("light") then    
+                for k,pit in pairs(Ents) do if pit.prefab == "campfire" or pit.prefab == "firepit"  then pit.SoundEmitter:PlaySound("rest/rest/in_light", "light") end end
             end
 
-            if ThePlayer.LightWatcher:GetLightValue() < 0.10 then
-                _soundemitter:SetParameter("dark1", "fade", 1)
+
+            for k,pit in pairs(Ents) do if pit.prefab == "campfire" or pit.prefab == "firepit" and pit.components.burnable:IsBurning() then pit.SoundEmitter:SetParameter("light", "fade", 1) end end
+            for k,pit in pairs(Ents) do if pit.prefab == "campfire" or pit.prefab == "firepit" and not pit.components.burnable:IsBurning() then pit.SoundEmitter:SetParameter("light", "fade", 0) end end
+            _soundemitter:PlaySound("rest/rest/dusk", "dusk1")
+            _soundemitter:SetParameter("dusk1", "fade", 1)
+            _soundemitter:SetParameter("day1", "fade", 0)
+        end
+
+
+        if  TheWorld.state.isday then
+            
+            for k,pit in pairs(Ents) do if pit.prefab == "campfire" or pit.prefab == "firepit" and pit.components.burnable:IsBurning() then pit.SoundEmitter:SetParameter("light", "fade", 0) end end
+            for k,pit in pairs(Ents) do if pit.prefab == "campfire" or pit.prefab == "firepit" and not pit.components.burnable:IsBurning() then pit.SoundEmitter:SetParameter("light", "fade", 0) end end
+            
+            if not inst.SoundEmitter:PlayingSound("day1") then 
+                
+
             end
-        end)
+            
 
+            _soundemitter:SetParameter("day1", "fade", 1)
 
-        _soundemitter:PlaySound("rest/rest/darkness", "dark1")
-        _soundemitter:SetParameter("dark1", "fade", 1)
-
-    end
-
-    if  phase == "day" then
-        for k,pit in pairs(Ents) do if pit.prefab == "campfire" or pit.prefab == "firepit" and pit.components.burnable:IsBurning() then pit.SoundEmitter:SetParameter("light", "fade", 0) end end
-        _soundemitter:SetParameter("dark1", "fade", 0)
-    end
+            _soundemitter:SetParameter("dark1", "fade", 0)
+        end
+        trigger_music()
+    end)
 
 
 end
+
+
+
+
+
+
 
 local function OnSeason()
     _isbusydirty = true
